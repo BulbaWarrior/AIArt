@@ -8,10 +8,12 @@ upscale_factor=1
 hue_weight = 4
 saturation_weight = 1
 value_weight = 1
-image_mutation_rate = 0.1
-crossover_rate = 0.2
+image_mutation_rate = 0.002
+crossover_rate = 0.03
 
 input_img = cv.imread("input.png")
+
+
 input_hsv = cv.cvtColor(input_img, cv.COLOR_BGR2HSV)
 
 def fitness(chromosome):
@@ -36,7 +38,7 @@ def mutate(chromosome):
     return chromosome
 
 def crossover(chrom1, chrom2):
-    for i in rnage(len(chrom1)):
+    for i in range(len(chrom1)):
         die = np.random.rand()
         if die <= crossover_rate:
             c = chrom1[i]
@@ -51,7 +53,9 @@ def get_mating_pool(population):
     return mating_pool
 
 def generate_offspring(mating_pool):
-    # TODO
+    permutation = np.random.permutation(len(mating_pool))
+    for i in range(0, len(mating_pool)-1, 2):
+        crossover(mating_pool[permutation[i]], mating_pool[permutation[i+1]])
     return mating_pool
 
 def generate_image(chromosome):
@@ -65,5 +69,16 @@ def generate_image(chromosome):
         imname = "data/" + str(chromosome[i]) + ".png"
         image[row*64:row*64 + 64, column*64:column*64 + 64] = cv.imread(imname)
     return image
+
+def show_chromosome(chromosome):
+    res = generate_image(chromosome) 
+    cv.imshow('result', res)
+    k = cv.waitKey(0)
+    if k == ord('x'):         # wait for 'x' key to exit
+        sys.exit()
+    elif k == ord('s'): # wait for 's' key to save and exit
+        cv.imwrite('output/specimen.png', res)
+        cv.destroyAllWindows()
+        
 
 
