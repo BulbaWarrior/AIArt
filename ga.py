@@ -12,30 +12,63 @@ image_mutation_rate = 0.01
 crossover_rate = 0.03
 input_img = cv.imread("input.png")
 
-sample_chromosome = np.random.randint(1, 21000, 64, dtype='uint16')
+
 MAX_FITNESS = 20000000
 
 input_hsv = cv.cvtColor(input_img, cv.COLOR_BGR2HSV)
 
+def mutate_vector(vec, amplitude):
+    for val in vec:
+        die = np.random.randint(0, 1)
+        mutation = np.random.randint(0, amplitude)
+        if(die == 0):
+            val -= mutation
+        else:
+            val += mutation
+        return vec
+
+class Gene():
+    color = np.zeros(3)
+    start_point = np.zeros(2)
+    end_point = np.zeros(2)
+    thickness = 5
+    def __init__(self):
+        self.color = np.random.randint(0, 255, 3, dtype=np.uint8)
+        self.start_point = np.random.randint(0, 511, 2)
+        self.end_point = np.random.randint(0, 511, 2)
+
+    def __repr__(self):
+        return str(tuple(self.color))
+
+    def normalize_point(point):
+        for coordinate in point:
+            if(coordinate > 511):
+                coordinate = 511
+            if(coordinate < 0):
+                coordinate = 0
+                
+    def mutate(self):
+        self.color = mutate_vector(self.color, 3)
+        self.start_point = mutate_vector(self.start_point, 5)
+        self.end_point = mutate_vector(self.end_point, 5)
+
+
+def generate_chromosome():
+    return [Gene() for i in range(64)]
+
 def fitness(chromosome):
     img = generate_image(chromosome)
-    hsv = cv.cvtColor(img, cv.COLOR_BGR2HSV)
-    hsv_diff = np.asarray(hsv[:,:,:], dtype=np.int32)
-    hsv_diff = hsv_diff - input_hsv
-    hsv_diff = np.square(hsv_diff)
-    max_fitness = np.full((512, 512), MAX_FITNESS, dtype = np.uint16)
-    hue_sum = np.sum(max_fitness - hsv_diff[:,:,0])
-    saturation_sum = np.sum(max_fitness - hsv_diff[:,:,1])
-    value_sum = np.sum(max_fitness - hsv_diff[:,:,2])
-    return (hue_sum*hue_weight + saturation_sum*saturation_weight +
-            value_sum*value_weight)
-
+    diff = np.asarray(img[:,:,:], dtype=np.int32)
+    diff = diff - input_img
+    diff = np.square(diff)
+    max_diff = np.full_like(diff, 255**2)
+    fitness = np.sum(max_diff - diff)
+    return fitness
+    
 
 def mutate(chromosome):
-    for i in range(len(chromosome)):
-        die = np.random.rand()
-        if die <= image_mutation_rate:
-            chromosome[i] = np.random.randint(1, 21000, dtype=np.uint16)
+    for gene in chromosome:
+        gene.mutate()
     return chromosome
 
 def crossover(chrom1, chrom2):
@@ -63,15 +96,12 @@ def generate_offspring(mating_pool):
     return mating_pool
 
 def generate_image(chromosome):
-    image = np.zeros((512*upscale_factor,512*upscale_factor,3), np.uint8)
-    # deviding the 512x512 image into an 8X8 grid and filling the grid with the images
-    # according to the chromosome
-    side_size = 512*upscale_factor // 64
-    for i in range(side_size**2):
-        row = i%side_size
-        column = i//side_size
-        imname = "data/" + str(chromosome[i]) + ".png"
-        image[row*64:row*64 + 64, column*64:column*64 + 64] = cv.imread(imname)
+    image = np.zeros((512, 512,3), np.uint8)
+    for gene in chromosome:
+        start_point = tuple(gene.start_point)
+        end_point = tuple(gene.end_point)
+        color = tuple(map(int, gene.color))
+        cv.line(image, start_point, end_point, color, gene.thickness)
     return image
 
 def show_chromosome(chromosome):
