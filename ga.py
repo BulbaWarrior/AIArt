@@ -8,11 +8,12 @@ upscale_factor=1
 hue_weight = 4
 saturation_weight = 1
 value_weight = 1
-image_mutation_rate = 0.002
+image_mutation_rate = 0.01
 crossover_rate = 0.03
-
 input_img = cv.imread("input.png")
 
+sample_chromosome = np.random.randint(1, 21000, 64, dtype='uint16')
+MAX_FITNESS = 20000000
 
 input_hsv = cv.cvtColor(input_img, cv.COLOR_BGR2HSV)
 
@@ -22,7 +23,7 @@ def fitness(chromosome):
     hsv_diff = np.asarray(hsv[:,:,:], dtype=np.int32)
     hsv_diff = hsv_diff - input_hsv
     hsv_diff = np.square(hsv_diff)
-    max_fitness = np.full((512, 512), np.iinfo(np.uint16).max, dtype = np.uint16)
+    max_fitness = np.full((512, 512), MAX_FITNESS, dtype = np.uint16)
     hue_sum = np.sum(max_fitness - hsv_diff[:,:,0])
     saturation_sum = np.sum(max_fitness - hsv_diff[:,:,1])
     value_sum = np.sum(max_fitness - hsv_diff[:,:,2])
@@ -47,9 +48,12 @@ def crossover(chrom1, chrom2):
     return chrom1, chrom2
 
 def get_mating_pool(population):
-    population_fitness = [(fitness(population[i]), i) for i in range(len(population))]
-    population_fitness.sort(reverse=True)
-    mating_pool = [population[i[1]] for i in population_fitness[:len(population)//2]]
+    population_score = [(np.random.randint(1, fitness(population[i])), i)
+                        for i in range(len(population))]
+    # each member of the population is assign a random value from [1, its fitness]
+    # the half with highest scores is the mating pool
+    population_score.sort(reverse=True)
+    mating_pool = [population[i[1]] for i in population_score[:len(population)//2]]
     return mating_pool
 
 def generate_offspring(mating_pool):

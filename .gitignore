@@ -2,3 +2,4 @@ data
 main.py~
 output
 input.png
+__pycache__/
