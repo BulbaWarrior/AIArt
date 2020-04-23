@@ -15,7 +15,6 @@ input_img = cv.imread("input.png")
 
 MAX_FITNESS = 20000000
 
-input_hsv = cv.cvtColor(input_img, cv.COLOR_BGR2HSV)
 
 def mutate_vector(vec, amplitude):
     for val in vec:
@@ -35,6 +34,14 @@ class Chromosome():
         self.start_point = np.random.randint(0, 511, (length, 2), dtype=np.int16)
         self.end_point = np.random.randint(0, 511, (length, 2), dtype=np.int16)
 
+    def copy(self):
+        length = self.length
+        color = np.array(self.color)
+        start_point = np.array(self.start_point)
+        end_point = np.array(self.end_point)
+        copy = self(length, color, start_point, end_point)
+        return copy
+
     def __repr__(self):
         return str(self.color)
             
@@ -46,7 +53,7 @@ class Chromosome():
     def crossover(self, chromosome):
         for i in range(self.length):
             die = np.random.rand()
-            if (die <= .5):
+            if (die <= crossover_rate):
                 c = np.array(self.color[i,:])
                 self.color[i,:] = chromosome.color[i,:]
                 chromosome.color[i,:] = c
@@ -62,7 +69,8 @@ class Chromosome():
         diff = np.array(img[:,:,:], dtype=np.int32)
         diff = diff - input_img
         diff = np.square(diff)
-        max_diff = np.full_like(diff, 255**2)
+        max_diff = np.array(input_img, dtype=np.int32)
+        max_diff = np.square(max_diff)
         fitness = np.sum(max_diff - diff)/np.sum(max_diff)
         return fitness
 
@@ -75,9 +83,21 @@ class Chromosome():
             cv.line(img, start_point, end_point, color, self.thickness)
         return img
 
+    def show(self):
+        res = self.get_image() 
+        cv.imshow('result', res)
+        k = cv.waitKey(0)
+        if k == ord('x'):         # wait for 'x' key to exit
+            sys.exit()
+        elif k == ord('s'): # wait for 's' key to save and exit
+            cv.imwrite('output/specimen.png', res)
+            cv.destroyAllWindows()
+
+
+
     
 def get_mating_pool(population):
-    population_score = [(np.random.randint(1, fitness(population[i])), i)
+    population_score = [(population[i].fitness(), i)
                         for i in range(len(population))]
     # each member of the population is assign a random value from [1, its fitness]
     # the half with highest scores is the mating pool
@@ -88,27 +108,7 @@ def get_mating_pool(population):
 def generate_offspring(mating_pool):
     permutation = np.random.permutation(len(mating_pool))
     for i in range(0, len(mating_pool)-1, 2):
-        crossover(mating_pool[permutation[i]], mating_pool[permutation[i+1]])
+        mating_pool[permutation[i]].crossover(mating_pool[permutation[i+1]])
     return mating_pool
-
-def generate_image(chromosome):
-    image = np.zeros((512, 512,3), np.uint8)
-    for gene in chromosome:
-        start_point = tuple(gene.start_point)
-        end_point = tuple(gene.end_point)
-        color = tuple(map(int, gene.color))
-        cv.line(image, start_point, end_point, color, gene.thickness)
-    return image
-
-def show_chromosome(chromosome):
-    res = generate_image(chromosome) 
-    cv.imshow('result', res)
-    k = cv.waitKey(0)
-    if k == ord('x'):         # wait for 'x' key to exit
-        sys.exit()
-    elif k == ord('s'): # wait for 's' key to save and exit
-        cv.imwrite('output/specimen.png', res)
-        cv.destroyAllWindows()
-        
 
 
