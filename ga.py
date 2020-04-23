@@ -27,59 +27,55 @@ def mutate_vector(vec, amplitude):
             val += mutation
         return vec
 
-class Gene():
-    color = np.zeros(3)
-    start_point = np.zeros(2)
-    end_point = np.zeros(2)
+class Chromosome():
     thickness = 5
-    def __init__(self):
-        self.color = np.random.randint(0, 255, 3, dtype=np.uint8)
-        self.start_point = np.random.randint(0, 511, 2)
-        self.end_point = np.random.randint(0, 511, 2)
+    def __init__(self, length):
+        self.length = length
+        self.color = np.random.randint(0, 255, (length, 3), dtype=np.int16)
+        self.start_point = np.random.randint(0, 511, (length, 2), dtype=np.int16)
+        self.end_point = np.random.randint(0, 511, (length, 2), dtype=np.int16)
 
     def __repr__(self):
-        return str(tuple(self.color))
-
-    def normalize_point(point):
-        for coordinate in point:
-            if(coordinate > 511):
-                coordinate = 511
-            if(coordinate < 0):
-                coordinate = 0
-                
+        return str(self.color)
+            
     def mutate(self):
-        self.color = mutate_vector(self.color, 3)
-        self.start_point = mutate_vector(self.start_point, 5)
-        self.end_point = mutate_vector(self.end_point, 5)
+        self.color += np.random.randint(-3, 3, (self.length, 3), dtype=np.int16)
+        self.start_point += np.random.randint(-5, 5, (self.length, 2), dtype=np.int16)
+        self.end_point = np.random.randint(-5, 5, (self.length, 2), dtype=np.int16)
 
+    def crossover(self, chromosome):
+        for i in range(self.length):
+            die = np.random.rand()
+            if (die <= .5):
+                c = np.array(self.color[i,:])
+                self.color[i,:] = chromosome.color[i,:]
+                chromosome.color[i,:] = c
+                c = np.array(self.start_point[i,:])
+                self.start_point[i,:] = chromosome.start_point[i,:]
+                chromosome.start_point[i,:] = c
+                c = np.array(self.end_point[i,:])
+                self.end_point[i,:] = chromosome.end_point[i,:]
+                chromosome.end_point[i,:] = c
 
-def generate_chromosome():
-    return [Gene() for i in range(64)]
+    def fitness(self):
+        img = self.get_image()
+        diff = np.array(img[:,:,:], dtype=np.int32)
+        diff = diff - input_img
+        diff = np.square(diff)
+        max_diff = np.full_like(diff, 255**2)
+        fitness = np.sum(max_diff - diff)/np.sum(max_diff)
+        return fitness
 
-def fitness(chromosome):
-    img = generate_image(chromosome)
-    diff = np.asarray(img[:,:,:], dtype=np.int32)
-    diff = diff - input_img
-    diff = np.square(diff)
-    max_diff = np.full_like(diff, 255**2)
-    fitness = np.sum(max_diff - diff)
-    return fitness
+    def get_image(self):
+        img = np.zeros((512,512,3), dtype=np.uint8)
+        for i in range(self.length):
+            start_point = tuple(self.start_point[i,:])
+            end_point = tuple(self.end_point[i,:])
+            color = tuple(map(int, self.color[i,:]))
+            cv.line(img, start_point, end_point, color, self.thickness)
+        return img
+
     
-
-def mutate(chromosome):
-    for gene in chromosome:
-        gene.mutate()
-    return chromosome
-
-def crossover(chrom1, chrom2):
-    for i in range(len(chrom1)):
-        die = np.random.rand()
-        if die <= crossover_rate:
-            c = chrom1[i]
-            chrom1[i] = chrom2[i]
-            chrom2[i] = c
-    return chrom1, chrom2
-
 def get_mating_pool(population):
     population_score = [(np.random.randint(1, fitness(population[i])), i)
                         for i in range(len(population))]
