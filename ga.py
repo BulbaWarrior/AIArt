@@ -8,7 +8,8 @@ upscale_factor=1
 hue_weight = 4
 saturation_weight = 1
 value_weight = 1
-image_mutation_rate = 0.01
+color_mutation_rate = 0.1
+point_mutation_rate = 0.1
 crossover_rate = 0.03
 input_img = cv.imread("input.png")
 
@@ -46,9 +47,9 @@ class Chromosome():
         return str(self.color)
             
     def mutate(self):
-        self.color += np.random.randint(-3, 3, (self.length, 3), dtype=np.int16)
-        self.start_point += np.random.randint(-5, 5, (self.length, 2), dtype=np.int16)
-        self.end_point = np.random.randint(-5, 5, (self.length, 2), dtype=np.int16)
+        self.color += np.random.randint(-3, 4, (self.length, 3), dtype=np.int16)
+        self.start_point += np.random.randint(-5, 6, (self.length, 2), dtype=np.int16)
+        self.end_point += np.random.randint(-5, 6, (self.length, 2), dtype=np.int16)
 
     def crossover(self, chromosome):
         for i in range(self.length):
@@ -93,8 +94,16 @@ class Chromosome():
             cv.imwrite('output/specimen.png', res)
             cv.destroyAllWindows()
 
+    def save(self, name):
+        cv.imwrite('output/'+name, self.get_image())
 
 
+def cosine_similarity(a, b):
+    dot_product = np.sum(a*b, axis=2) # (512x512 array of color dot products)
+    cosine_similarity = dot_product/(np.sqrt(np.sum(a*a, axis=2)) *
+                                     np.sqrt(np.sum(b*b, axis=2)))
+    cosine_similarity[np.isnan(cosine_similarity)] = 0.
+    return cosine_similarity
     
 def get_mating_pool(population):
     population_score = [(population[i].fitness(), i)
@@ -102,7 +111,7 @@ def get_mating_pool(population):
     # each member of the population is assign a random value from [1, its fitness]
     # the half with highest scores is the mating pool
     population_score.sort(reverse=True)
-    mating_pool = [population[i[1]] for i in population_score[:len(population)//2]]
+    mating_pool = [population[i[1]] for i in population_score]
     return mating_pool
 
 def generate_offspring(mating_pool):
