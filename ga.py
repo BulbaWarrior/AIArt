@@ -67,13 +67,8 @@ class Chromosome():
 
     def fitness(self):
         img = self.get_image()
-        diff = np.array(img[:,:,:], dtype=np.int32)
-        diff = diff - input_img
-        diff = np.square(diff)
-        max_diff = np.array(input_img, dtype=np.int32)
-        max_diff = np.square(max_diff)
-        fitness = np.sum(max_diff - diff)/np.sum(max_diff)
-        return fitness
+        similarity = cosine_similarity(img, input_img)
+        return np.sum(similarity)
 
     def get_image(self):
         img = np.zeros((512,512,3), dtype=np.uint8)
