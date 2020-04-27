@@ -20,8 +20,7 @@ while True:
         population = Population(100)
 
     population.reproduce(30)
-    for i in range(30, population.size):
-        population.mutate(i)
+    population.mutate(30)
 
     print("finished generation "+ str(gen_counter) + ". Best fitness is: " + str(population.fitness(0)))
     gen_counter += 1

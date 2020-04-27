@@ -11,8 +11,10 @@ value_weight = 1
 color_mutation_rate = 0.1
 point_mutation_rate = 0.1
 crossover_rate = 0.03
-input_img = cv.imread("input.png")
-
+input_img = cv.imread("input2.png")
+max_diff = np.asarray(input_img, dtype=np.int32)
+max_diff = np.square(max_diff)
+max_diff_sum = np.sum(max_diff)
 
 MAX_FITNESS = 20000000
 
@@ -29,54 +31,38 @@ def mutate_vector(vec, amplitude):
 
 class Population():
     current_image = np.zeros((512,512,3), dtype=np.uint8)
-    thickness = 5
     def __init__(self, size):
+        self.thickness = np.random.randint(2, 20, (size), dtype=np.int16)
         self.size = size
         self.color = np.random.randint(0, 255, (size, 3), dtype=np.int16)
         self.start_point = np.random.randint(0, 511,(size, 2), dtype=np.int16)
         self.end_point = np.random.randint(0, 511, (size, 2), dtype=np.int16)
 
 
-    def copy(self):
-        color = np.array(self.color)
-        start_point = np.array(self.start_point)
-        end_point = np.array(self.end_point)
-        copy = Chromosome()
-        copy.color = color
-        copy.start_point = start_point
-        copy.end_point = end_point
-        return copy
-
     def __repr__(self):
         return str(self.color)
             
-    def mutate(self, i):
-        self.color[i] += np.random.randint(-10, 11, 3, dtype=np.int16)
-        self.start_point[i] += np.random.randint(-17, 18, 2, dtype=np.int16)
-        self.end_point[i] += np.random.randint(-17, 18, 2, dtype=np.int16)
-
-    def crossover(self, chromosome):
-        for i in range(self.length):
-            die = np.random.rand()
-            if (die <= crossover_rate):
-                c = np.array(self.color[i,:])
-                self.color[i,:] = chromosome.color[i,:]
-                chromosome.color[i,:] = c
-                c = np.array(self.start_point[i,:])
-                self.start_point[i,:] = chromosome.start_point[i,:]
-                chromosome.start_point[i,:] = c
-                c = np.array(self.end_point[i,:])
-                self.end_point[i,:] = chromosome.end_point[i,:]
-                chromosome.end_point[i,:] = c
+    def mutate(self, start): # mutate genes starting from start and on
+        self.thickness[start:] += np.random.randint(-3, 4, 1, dtype=np.int16)
+        self.thickness[self.thickness < 2] = 2
+        self.thickness[self.thickness > 20] = 20
+        self.color[start:] += np.random.randint(-10, 11, 3, dtype=np.int16)
+        # self.color[self.color > 255] = 255
+        # self.color[self.color < 0] = 0
+        self.start_point[start:] += np.random.randint(-17, 18, 2, dtype=np.int16)
+        self.start_point[self.start_point > 511] = 511
+        self.start_point[self.start_point < 0] = 0
+        self.end_point[start:] += np.random.randint(-17, 18, 2, dtype=np.int16)
+        self.end_point[self.end_point > 511] = 511
+        self.end_point[self.end_point < 0] = 0
+        
 
     def fitness(self, i):
         img = self.get_image(i)
         diff = np.array(img[:,:,:], dtype=np.int32)
         diff = diff - input_img
         diff = np.square(diff)
-        max_diff = np.array(input_img, dtype=np.int32)
-        max_diff = np.square(max_diff)
-        fitness = np.sum(max_diff - diff)/np.sum(max_diff)
+        fitness = np.sum(max_diff - diff)/max_diff_sum
         return fitness
 
     def get_image(self, i):
@@ -84,7 +70,8 @@ class Population():
         start_point = tuple(self.start_point[i])
         end_point = tuple(self.end_point[i])
         color = tuple(map(int, self.color[i]))
-        cv.line(img, start_point, end_point, color, self.thickness)
+        thickness = self.thickness[i]
+        cv.line(img, start_point, end_point, color, thickness)
         return img
 
     def show(self, i):
