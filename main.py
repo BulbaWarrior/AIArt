@@ -1,29 +1,29 @@
 #! /bin/python3
 
 import ga
-from ga import Chromosome
+from ga import Population
 import numpy as np
 import cv2 as cv
 
 population_size = 100
-population = [Chromosome() for i in range(population_size)]
+population = Population(100)
 
 gen_counter = 0
 while True:
     
-    pool = ga.get_mating_pool(population, 30) #top half of the population is considered to be in the mating pool, while the bootom half should die
-    population[:30] = pool[:]
+    population.sort()
     
-    population[0].show()
-    if (gen_counter % 100 == 0):
-        Chromosome.current_image = population[0].get_image()
-        population[0].save('generation%d.png'% gen_counter)
+    # population.show(0)
+    if (gen_counter % 30 == 0):
+        Population.current_image = population.get_image(0)
+        population.save(0, 'generation%d.png'% gen_counter)
+        population = Population(100)
 
-    for i in range(30, len(population)):
-        population[i] = pool[i % len(pool)].copy()
-        population[i].mutate()
+    population.reproduce(30)
+    for i in range(30, population.size):
+        population.mutate(i)
 
-    print("finished generation "+ str(gen_counter) + ". Best fitness is: " + str(population[0].fitness()))
+    print("finished generation "+ str(gen_counter) + ". Best fitness is: " + str(population.fitness(0)))
     gen_counter += 1
     
 
