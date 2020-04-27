@@ -1,5 +1,5 @@
 data
 main.py~
-output
+output/*.png
 input.png
 __pycache__/

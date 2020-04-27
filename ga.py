@@ -4,7 +4,7 @@ import cv2 as cv
 import sys
 
 crossover_rate = 0.03
-input_img = cv.imread("input2.png")
+input_img = cv.imread("input.png")
 
 
 MAX_FITNESS = 20000000
@@ -15,11 +15,13 @@ class Population():
     shape = input_img.shape
     avg_color = np.sum(input_img, axis=(0,1))//(shape[0]*shape[1])
     current_image = np.full_like(input_img, avg_color,  dtype=np.uint8)
+    current_fitness = 0
     max_diff = np.asarray(input_img, dtype=np.int32)
     max_diff = np.square(max_diff-current_image)
     max_diff_sum = np.sum(max_diff)
+
     def __init__(self, size):
-        self.thickness = np.random.randint(2, 20, (size), dtype=np.int16)
+        self.thickness = np.random.randint(2, 19, (size), dtype = np.int16)
         self.size = size
         self.color = np.random.randint(0, 255, (size, 3), dtype=np.int16)
         self.start_point = np.random.randint(0, 511,(size, 2), dtype=np.int16)
@@ -30,9 +32,10 @@ class Population():
         return str(self.color)
             
     def mutate(self, start): # mutate genes starting from start and on
-        self.thickness[start:] += np.random.randint(-3, 4, 1, dtype=np.int16)
-        self.thickness[self.thickness < 2] = 2
+
+        self.thickness[start:] += np.random.randint(-4, 5, 1, dtype=np.int16)
         self.thickness[self.thickness > 20] = 20
+        self.thickness[self.thickness < 2] = 2
         self.color[start:] += np.random.randint(-10, 11, 3, dtype=np.int16)
         # self.color[self.color > 255] = 255
         # self.color[self.color < 0] = 0
@@ -51,6 +54,7 @@ class Population():
         diff = np.square(diff)
         fitness = np.sum(self.max_diff - diff)/self.max_diff_sum
         return fitness
+
 
     def get_image(self, i):
         img = np.array(self.current_image)
@@ -72,7 +76,7 @@ class Population():
             cv.destroyAllWindows()
 
     def save(self,i , name):
-        cv.imwrite('output2/'+name, self.get_image(i))
+        cv.imwrite('output/'+name, self.get_image(i))
 
     def sort(self):
         population_score = [(self.fitness(i), i)
@@ -86,7 +90,7 @@ class Population():
         self.end_point = np.array(end_point)
                  
     def reproduce(self, pool_size):
-        for i in range(self.size):
+        for i in range(pool_size, self.size):
             self.color[i] = self.color[i % pool_size]
             self.start_point[i] = self.start_point[i % pool_size]
             self.end_point[i] = self.end_point[i % pool_size]

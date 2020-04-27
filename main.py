@@ -16,8 +16,8 @@ while True:
     population.sort()
     
     # population.show(0)
-    generations_per_line = int(fitness * 40) + 1
-    if (gen_counter % generations_per_line == 0):
+
+    if (gen_counter % 30 == 0):
         Population.current_image = population.get_image(0)
         population.save(0, 'generation%d.png'% gen_counter)
         population = Population(100)
