@@ -3,34 +3,21 @@ import numpy as np
 import cv2 as cv
 import sys
 
-upscale_factor=1
-
-hue_weight = 4
-saturation_weight = 1
-value_weight = 1
-color_mutation_rate = 0.1
-point_mutation_rate = 0.1
 crossover_rate = 0.03
 input_img = cv.imread("input2.png")
-max_diff = np.asarray(input_img, dtype=np.int32)
-max_diff = np.square(max_diff)
-max_diff_sum = np.sum(max_diff)
+
 
 MAX_FITNESS = 20000000
 
 
-def mutate_vector(vec, amplitude):
-    for val in vec:
-        die = np.random.randint(0, 1)
-        mutation = np.random.randint(0, amplitude)
-        if(die == 0):
-            val -= mutation
-        else:
-            val += mutation
-        return vec
 
 class Population():
-    current_image = np.zeros((512,512,3), dtype=np.uint8)
+    shape = input_img.shape
+    avg_color = np.sum(input_img, axis=(0,1))//(shape[0]*shape[1])
+    current_image = np.full_like(input_img, avg_color,  dtype=np.uint8)
+    max_diff = np.asarray(input_img, dtype=np.int32)
+    max_diff = np.square(max_diff-current_image)
+    max_diff_sum = np.sum(max_diff)
     def __init__(self, size):
         self.thickness = np.random.randint(2, 20, (size), dtype=np.int16)
         self.size = size
@@ -62,7 +49,7 @@ class Population():
         diff = np.array(img[:,:,:], dtype=np.int32)
         diff = diff - input_img
         diff = np.square(diff)
-        fitness = np.sum(max_diff - diff)/max_diff_sum
+        fitness = np.sum(self.max_diff - diff)/self.max_diff_sum
         return fitness
 
     def get_image(self, i):
@@ -78,14 +65,14 @@ class Population():
         res = self.get_image(i) 
         cv.imshow('result', res)
         k = cv.waitKey(0)
-        if k == ord('x'):         # wait for 'x' key to exit
+        if k == ord('x'): # wait for 'x' key to exit
             sys.exit()
         elif k == ord('s'): # wait for 's' key to save and exit
             cv.imwrite('output/specimen.png', res)
             cv.destroyAllWindows()
 
     def save(self,i , name):
-        cv.imwrite('output/'+name, self.get_image(i))
+        cv.imwrite('output2/'+name, self.get_image(i))
 
     def sort(self):
         population_score = [(self.fitness(i), i)
@@ -113,13 +100,6 @@ def get_mating_pool(population, num):
     # the half with highest scores is the mating pool
     population_score.sort(reverse=True)
     mating_pool = [population[i[1]] for i in population_score]
-    return mating_pool
-
-def generate_offspring(mating_pool):
-    permutation = np.random.permutation(len(mating_pool))
-    offspring = []
-    for i in range(0, len(mating_pool)-1, 2):
-        offspring = mating_pool[permutation[i]].copy().crossover(mating_pool[permutation[i+1]])
     return mating_pool
 
 
