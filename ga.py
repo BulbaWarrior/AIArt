@@ -28,28 +28,31 @@ def mutate_vector(vec, amplitude):
         return vec
 
 class Chromosome():
+    current_image = np.zeros((512,512,3), dtype=np.uint8)
     thickness = 5
-    def __init__(self, length):
-        self.length = length
-        self.color = np.random.randint(0, 255, (length, 3), dtype=np.int16)
-        self.start_point = np.random.randint(0, 511, (length, 2), dtype=np.int16)
-        self.end_point = np.random.randint(0, 511, (length, 2), dtype=np.int16)
+    def __init__(self):
+        self.color = np.random.randint(0, 255, 3, dtype=np.int16)
+        self.start_point = np.random.randint(0, 511, 2, dtype=np.int16)
+        self.end_point = np.random.randint(0, 511, 2, dtype=np.int16)
+
 
     def copy(self):
-        length = self.length
         color = np.array(self.color)
         start_point = np.array(self.start_point)
         end_point = np.array(self.end_point)
-        copy = self(length, color, start_point, end_point)
+        copy = Chromosome()
+        copy.color = color
+        copy.start_point = start_point
+        copy.end_point = end_point
         return copy
 
     def __repr__(self):
         return str(self.color)
             
     def mutate(self):
-        self.color += np.random.randint(-3, 4, (self.length, 3), dtype=np.int16)
-        self.start_point += np.random.randint(-5, 6, (self.length, 2), dtype=np.int16)
-        self.end_point += np.random.randint(-5, 6, (self.length, 2), dtype=np.int16)
+        self.color += np.random.randint(-10, 11, 3, dtype=np.int16)
+        self.start_point += np.random.randint(-17, 18, 2, dtype=np.int16)
+        self.end_point += np.random.randint(-17, 18, 2, dtype=np.int16)
 
     def crossover(self, chromosome):
         for i in range(self.length):
@@ -76,12 +79,11 @@ class Chromosome():
         return fitness
 
     def get_image(self):
-        img = np.zeros((512,512,3), dtype=np.uint8)
-        for i in range(self.length):
-            start_point = tuple(self.start_point[i,:])
-            end_point = tuple(self.end_point[i,:])
-            color = tuple(map(int, self.color[i,:]))
-            cv.line(img, start_point, end_point, color, self.thickness)
+        img = np.array(self.current_image)
+        start_point = tuple(self.start_point)
+        end_point = tuple(self.end_point)
+        color = tuple(map(int, self.color))
+        cv.line(img, start_point, end_point, color, self.thickness)
         return img
 
     def show(self):
@@ -98,14 +100,8 @@ class Chromosome():
         cv.imwrite('output/'+name, self.get_image())
 
 
-def cosine_similarity(a, b):
-    dot_product = np.sum(a*b, axis=2) # (512x512 array of color dot products)
-    cosine_similarity = dot_product/(np.sqrt(np.sum(a*a, axis=2)) *
-                                     np.sqrt(np.sum(b*b, axis=2)))
-    cosine_similarity[np.isnan(cosine_similarity)] = 0.
-    return cosine_similarity
     
-def get_mating_pool(population):
+def get_mating_pool(population, num):
     population_score = [(population[i].fitness(), i)
                         for i in range(len(population))]
     # each member of the population is assign a random value from [1, its fitness]
@@ -116,8 +112,9 @@ def get_mating_pool(population):
 
 def generate_offspring(mating_pool):
     permutation = np.random.permutation(len(mating_pool))
+    offspring = []
     for i in range(0, len(mating_pool)-1, 2):
-        mating_pool[permutation[i]].crossover(mating_pool[permutation[i+1]])
+        offspring = mating_pool[permutation[i]].copy().crossover(mating_pool[permutation[i+1]])
     return mating_pool
 
 
