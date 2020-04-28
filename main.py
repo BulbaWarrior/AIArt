@@ -18,7 +18,6 @@ while True:
     # population.show(0)
 
     if (gen_counter % 30 == 0):
-        Population.current_image = population.get_image(0)
         population.save(0, 'generation%d.png'% gen_counter)
         population.accept_line(population)
 

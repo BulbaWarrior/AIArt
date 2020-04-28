@@ -4,7 +4,7 @@ import cv2 as cv
 import sys
 
 crossover_rate = 0.03
-input_img = cv.imread("input3.png")
+input_img = cv.imread("input.jpg")
 
 
 MAX_FITNESS = 20000000
@@ -24,17 +24,20 @@ class Population():
     max_diff = np.asarray(input_img, dtype=np.int32)
     max_diff = np.square(max_diff-current_image)
     max_diff_sum = np.sum(max_diff)
+    
+    img_buffer = np.zeros((512, 512, 3), dtype=np.uint8)
 
     def __init__(self, size):
-        self.thickness = np.random.randint(2, 19, (size), dtype = np.int16)
+        self.thickness = np.random.randint(1, 9, (size), dtype = np.int16)
         self.size = size
         self.color = np.random.randint(0, 255, (size, 3), dtype=np.int16)
         self.start_point = np.random.randint(0, 511,(size, 2), dtype=np.int16)
         self.end_point = np.random.randint(0, 511, (size, 2), dtype=np.int16)
+        
 
     @classmethod
     def accept_line(cls, self):
-        cls.current_image = self.get_image(0)
+        np.copyto(cls.current_image, self.get_image(0))
         cls.fitness_mat = np.array(cls.current_image, dtype=np.int32)
         cls.fitness_mat -= input_img
         cls.fitness_mat = np.square(cls.fitness_mat)
@@ -48,19 +51,19 @@ class Population():
     def mutate(self, start): # mutate genes starting from start and on
 
         self.thickness[start:] += np.random.randint(-4, 5, 1, dtype=np.int16)
-        self.thickness[self.thickness > 20] = 20
-        self.thickness[self.thickness < 2] = 2
-        self.color[start:] += np.random.randint(-10, 11, 3, dtype=np.int16)
+        self.thickness[self.thickness > 9] = 9
+        self.thickness[self.thickness < 1] = 1
+        self.color[start:] += np.random.randint(-50, 51, 3, dtype=np.int16)
         # self.color[self.color > 255] = 255
         # self.color[self.color < 0] = 0
-        self.start_point[start:] += np.random.randint(-17, 18, 2, dtype=np.int16)
+        self.start_point[start:] += np.random.randint(-75, 76, 2, dtype=np.int16)
         self.start_point[self.start_point > 511] = 511
         self.start_point[self.start_point < 0] = 0
-        self.end_point[start:] += np.random.randint(-17, 18, 2, dtype=np.int16)
+        self.end_point[start:] += np.random.randint(-75, 76, 2, dtype=np.int16)
         self.end_point[self.end_point > 511] = 511
         self.end_point[self.end_point < 0] = 0
         
-
+        
     def fitness(self, i):
         img = self.get_image(i)
         line_location = (img != self.current_image)
@@ -73,14 +76,14 @@ class Population():
         return total_fitness
     
 
-    def get_image(self, i, line=False):
-        img = np.array(self.current_image)
+    def get_image(self, i):
+        np.copyto(self.img_buffer, self.current_image)
         start_point = tuple(self.start_point[i])
         end_point = tuple(self.end_point[i])
         color = tuple(map(int, self.color[i]))
         thickness = self.thickness[i]
-        cv.line(img, start_point, end_point, color, thickness)
-        return img
+        cv.line(self.img_buffer, start_point, end_point, color, thickness)
+        return self.img_buffer
 
     def show(self, i):
         res = self.get_image(i) 
@@ -93,7 +96,7 @@ class Population():
             cv.destroyAllWindows()
 
     def save(self,i , name):
-        cv.imwrite('output4/'+name, self.get_image(i))
+        cv.imwrite('output6/'+name, self.get_image(i))
 
     def sort(self):
         population_score = [(self.fitness(i), i)
