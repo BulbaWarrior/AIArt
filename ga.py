@@ -4,7 +4,7 @@ import cv2 as cv
 import sys
 
 crossover_rate = 0.03
-input_img = cv.imread("input.png")
+input_img = cv.imread("input3.png")
 
 
 MAX_FITNESS = 20000000
@@ -14,8 +14,13 @@ MAX_FITNESS = 20000000
 class Population():
     shape = input_img.shape
     avg_color = np.sum(input_img, axis=(0,1))//(shape[0]*shape[1])
-    current_image = np.full_like(input_img, avg_color,  dtype=np.uint8)
-    current_fitness = 0
+    base_image = np.full_like(input_img, avg_color,  dtype=np.uint8)
+    current_image = np.array(base_image)
+
+    fitness_mat = np.array(current_image, dtype=np.int32)
+    fitness_mat -= input_img
+    fitness_mat = np.square(fitness_mat)
+    current_fitness = np.sum(fitness_mat)
     max_diff = np.asarray(input_img, dtype=np.int32)
     max_diff = np.square(max_diff-current_image)
     max_diff_sum = np.sum(max_diff)
@@ -26,6 +31,15 @@ class Population():
         self.color = np.random.randint(0, 255, (size, 3), dtype=np.int16)
         self.start_point = np.random.randint(0, 511,(size, 2), dtype=np.int16)
         self.end_point = np.random.randint(0, 511, (size, 2), dtype=np.int16)
+
+    @classmethod
+    def accept_line(cls, self):
+        cls.current_image = self.get_image(0)
+        cls.fitness_mat = np.array(cls.current_image, dtype=np.int32)
+        cls.fitness_mat -= input_img
+        cls.fitness_mat = np.square(cls.fitness_mat)
+        cls.current_fitness = np.sum(cls.fitness_mat)
+        self.__init__(self.size)
 
 
     def __repr__(self):
@@ -49,14 +63,17 @@ class Population():
 
     def fitness(self, i):
         img = self.get_image(i)
-        diff = np.array(img[:,:,:], dtype=np.int32)
-        diff = diff - input_img
-        diff = np.square(diff)
-        fitness = np.sum(self.max_diff - diff)/self.max_diff_sum
-        return fitness
+        line_location = (img != self.current_image)
+        
+        diff = img[line_location].astype(np.int32) # extract the line from picture
+        diff = diff - input_img[line_location] # Subtract previous pixels of the line
+        diff = np.square(diff) # find the square of the difference
+        current_line_fitness = self.fitness_mat[line_location]
+        total_fitness = self.current_fitness - np.sum(current_line_fitness) + np.sum(diff)
+        return total_fitness
+    
 
-
-    def get_image(self, i):
+    def get_image(self, i, line=False):
         img = np.array(self.current_image)
         start_point = tuple(self.start_point[i])
         end_point = tuple(self.end_point[i])
@@ -76,12 +93,12 @@ class Population():
             cv.destroyAllWindows()
 
     def save(self,i , name):
-        cv.imwrite('output/'+name, self.get_image(i))
+        cv.imwrite('output4/'+name, self.get_image(i))
 
     def sort(self):
         population_score = [(self.fitness(i), i)
                             for i in range(self.size)]
-        population_score.sort(reverse=True)
+        population_score.sort(reverse=False)
         color = [self.color[i[1]] for i in population_score]
         start_point = [self.start_point[i[1]] for i in population_score]
         end_point = [self.end_point[i[1]] for i in population_score]

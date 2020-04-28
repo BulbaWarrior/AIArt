@@ -20,7 +20,7 @@ while True:
     if (gen_counter % 30 == 0):
         Population.current_image = population.get_image(0)
         population.save(0, 'generation%d.png'% gen_counter)
-        population = Population(100)
+        population.accept_line(population)
 
     population.reproduce(pool_size)
     population.mutate(pool_size)
