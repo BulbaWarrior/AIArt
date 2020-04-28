@@ -56,10 +56,10 @@ class Population():
         self.color[start:] += np.random.randint(-50, 51, 3, dtype=np.int16)
         # self.color[self.color > 255] = 255
         # self.color[self.color < 0] = 0
-        self.start_point[start:] += np.random.randint(-75, 76, 2, dtype=np.int16)
+        self.start_point[start:] += np.random.randint(-150, 151, 2, dtype=np.int16)
         self.start_point[self.start_point > 511] = 511
         self.start_point[self.start_point < 0] = 0
-        self.end_point[start:] += np.random.randint(-75, 76, 2, dtype=np.int16)
+        self.end_point[start:] += np.random.randint(-150, 151, 2, dtype=np.int16)
         self.end_point[self.end_point > 511] = 511
         self.end_point[self.end_point < 0] = 0
         
