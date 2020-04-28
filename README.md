@@ -1,2 +1,5 @@
 Generating art with evolutionary algorithms
-run main.py <path-to-input-picture> (not yet done)
+```
+python3 -m pip install requirements.txt
+python3 main.py
+```
