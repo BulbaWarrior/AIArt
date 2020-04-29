@@ -6,9 +6,9 @@ import numpy as np
 import cv2 as cv
 import sys
 
-population_size = 100
+population_size = 120
 pool_size = 30
-population = Population(100)
+population = Population(population_size)
 
 gen_counter = 0
 fitness = 0
@@ -19,7 +19,7 @@ while True:
     
     # population.show(0)
 
-    if (gen_counter % 30 == 0):
+    if (gen_counter % 40 == 0):
         if(population.fitness(0) < population.current_fitness):
             population.save(0, 'generation%d.png'% gen_counter)
             population.accept_line(population)
