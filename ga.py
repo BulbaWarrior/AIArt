@@ -3,47 +3,51 @@ import numpy as np
 import cv2 as cv
 import sys
 
-crossover_rate = 0.03
-input_img = cv.imread("input.png")
-
-
-MAX_FITNESS = 20000000
-
-
 
 class Population():
-    shape = input_img.shape
-    avg_color = np.sum(input_img, axis=(0,1))//(shape[0]*shape[1])
-    base_image = np.full_like(input_img, avg_color,  dtype=np.uint8)
-    current_image = np.array(base_image)
-
-    fitness_mat = np.array(current_image, dtype=np.int32)
-    fitness_mat -= input_img
-    fitness_mat = np.square(fitness_mat)
-    current_fitness = np.sum(fitness_mat)
-    max_diff = np.asarray(input_img, dtype=np.int32)
-    max_diff = np.square(max_diff-current_image)
-    max_diff_sum = np.sum(max_diff)
+    
     
     img_buffer = np.zeros((512, 512, 3), dtype=np.uint8)
 
-    def __init__(self, size):
+    def __init__(self, size, input_name='input.png', output_folder='output_folder'):
+        self.size = size
+        self.input_img = cv.imread(input_name)
+        shape = self.input_img.shape
+        avg_color = np.sum(self.input_img, axis=(0,1))//(shape[0]*shape[1])
+        self.base_image = np.full_like(self.input_img, avg_color,  dtype=np.uint8)
+        self.current_image = np.array(self.base_image)
+        
+        fitness_mat = np.array(self.current_image, dtype=np.int32)
+        fitness_mat -= self.input_img
+        self.fitness_mat = np.square(fitness_mat)
+        self.current_fitness = np.sum(fitness_mat)
+        max_diff = np.asarray(self.input_img, dtype=np.int32)
+        self.max_diff = np.square(max_diff-self.current_image)
+        self.max_diff_sum = np.sum(self.max_diff)
+        self.output_folder = output_folder
+        self.input_img = cv.imread(input_name)
+
         self.mutate_color = np.random.randint(0, 2, (size), dtype=np.bool)
         self.thickness = np.random.randint(1, 11, (size), dtype=np.int16)
-        self.size = size
         self.color = np.random.randint(0, 256, (size, 3), dtype=np.int16)
         self.start_point = np.random.randint(0, 512,(size, 2), dtype=np.int16)
         self.end_point = np.random.randint(0, 512, (size, 2), dtype=np.int16)
-        
 
-    @classmethod
-    def accept_line(cls, self):
-        np.copyto(cls.current_image, self.get_image(0))
-        cls.fitness_mat = np.array(cls.current_image, dtype=np.int32)
-        cls.fitness_mat -= input_img
-        cls.fitness_mat = np.square(cls.fitness_mat)
-        cls.current_fitness = np.sum(cls.fitness_mat)
-        self.__init__(self.size)
+    def reroll_population(self):
+        self.mutate_color = np.random.randint(0, 2, (self.size), dtype=np.bool)
+        self.thickness = np.random.randint(1, 11, (self.size), dtype=np.int16)
+        self.color = np.random.randint(0, 256, (self.size, 3), dtype=np.int16)
+        self.start_point = np.random.randint(0, 512,(self.size, 2), dtype=np.int16)
+        self.end_point = np.random.randint(0, 512, (self.size, 2), dtype=np.int16)
+
+
+    def accept_line(self):
+        np.copyto(self.current_image, self.get_image(0))
+        fitness_mat = np.array(self.current_image, dtype=np.int32)
+        fitness_mat -= self.input_img
+        self.fitness_mat = np.square(fitness_mat)
+        self.current_fitness = np.sum(self.fitness_mat)
+        self.reroll_population()
 
 
     def __repr__(self):
@@ -83,7 +87,7 @@ class Population():
     def fitness(self, i):
         img = self.get_image(i)
         line_location = (img != self.current_image)
-        
+        input_img = self.input_img
         diff = img[line_location].astype(np.int32) # extract the line from picture
         diff = diff - input_img[line_location] # Subtract previous pixels of the line
         diff = np.square(diff) # find the square of the difference
@@ -108,11 +112,11 @@ class Population():
         if k == ord('x'): # wait for 'x' key to exit
             sys.exit()
         elif k == ord('s'): # wait for 's' key to save and exit
-            cv.imwrite('output/specimen.png', res)
+            cv.imwrite(self.output_folder + 'specimen.png', res)
             cv.destroyAllWindows()
 
     def save(self,i , name):
-        cv.imwrite('output/'+name, self.get_image(i))
+        cv.imwrite(self.output_folder + name, self.get_image(i))
 
     def sort(self):
         population_score = [(self.fitness(i), i)
