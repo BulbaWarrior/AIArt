@@ -54,6 +54,7 @@ while True:
             if(fail_counter >= 5):
                 print("algorithm finished")
                 sys.exit()
+            population.reroll_population()
 
     population.reproduce(pool_size)
     population.mutate(pool_size)
